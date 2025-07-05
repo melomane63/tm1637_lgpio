@@ -5,7 +5,7 @@ TM1637 7-segment LED display driver using the `lgpio` library on Raspberry Pi.
 ## Installation
 
 ```bash
-pip install git+https://github.com/melomane63/tm1637_lgpio.git
+pip3 install git+https://github.com/melomane63/tm1637_lgpio.git
 ```
 
 ## Example
