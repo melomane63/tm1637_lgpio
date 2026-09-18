@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='tm1637_lgpio',
@@ -8,7 +8,7 @@ setup(
     author_email='domenico.guerra.63@gmail.com',
     url='https://github.com/melomane63/tm1637_lgpio',
     license='MIT',
-    packages=find_packages(),
+    py_modules=['tm1637_lgpio'],  # <-- Indique à pip d'installer directement tm1637_lgpio.py
     install_requires=[
         'lgpio',
     ],
