@@ -18,5 +18,5 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Topic :: Software Development :: Embedded Systems',
     ],
-    python_requires='>=3.11',
+    python_requires='>=3.7',
 )
