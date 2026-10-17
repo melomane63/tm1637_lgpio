@@ -13,6 +13,11 @@ Port to lgpio
 MIT Licence
 Copyright (c) 2025 Domenico GUERRA
 
+Modified 2026, D. Guerra:
+  - ACK handling: DIO is driven low during the ACK clock pulse, so the Pi no
+    longer fights the TM1637 when bit 7 of the byte sent was 1.
+  - New `chip` parameter (default 0) to select the GPIO chip.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -55,7 +60,7 @@ _SEGMENTS = bytearray(
 class TM1637(object):
     """Library for quad 7-segment LED modules based on the TM1637 LED driver."""
 
-    def __init__(self, clk, dio, brightness=7):
+    def __init__(self, clk, dio, brightness=7, chip=0):
         self.clk = clk
         self.dio = dio
 
@@ -63,7 +68,7 @@ class TM1637(object):
             raise ValueError("Brightness out of range")
         self._brightness = brightness
 
-        self.h = GPIO.gpiochip_open(0)
+        self.h = GPIO.gpiochip_open(chip)
         GPIO.gpio_claim_output(self.h, self.clk)
         GPIO.gpio_claim_output(self.h, self.dio)
         GPIO.gpio_write(self.h, self.clk, 0)
@@ -105,13 +110,16 @@ class TM1637(object):
             GPIO.gpio_write(self.h, self.clk, 1)
             sleep(TM1637_DELAY)
             GPIO.gpio_write(self.h, self.clk, 0)
-            sleep(TM1637_DELAY)
+            if i < 7:
+                sleep(TM1637_DELAY)  # no pause after the 8th falling edge: DIO must go low right away
 
-        GPIO.gpio_write(self.h, self.clk, 0)
+        # ACK: the TM1637 pulls DIO low. Drive it low as well, so there is no
+        # conflict when bit 7 of the byte was 1.
+        GPIO.gpio_write(self.h, self.dio, 0)
         sleep(TM1637_DELAY)
-        GPIO.gpio_write(self.h, self.clk, 1)
+        GPIO.gpio_write(self.h, self.clk, 1)  # 9th clock pulse
         sleep(TM1637_DELAY)
-        GPIO.gpio_write(self.h, self.clk, 0)
+        GPIO.gpio_write(self.h, self.clk, 0)  # the chip releases DIO here
 
     def brightness(self, val=None):
         """Set the display brightness 0-7."""
@@ -235,7 +243,7 @@ class TM1637(object):
             segments = [seg1, seg2, seg3, _SEGMENTS[38]] # segments and degree character
             segments[1] |= 0x80  # colon as decimal
             self.write(segments)
-            
+
     def show(self, string, colon=False):
         segments = self.encode_string(string)
         if len(segments) > 1 and colon:
@@ -273,4 +281,3 @@ class TM1637Decimal(TM1637):
             segments[j] = self.encode_char(string[i])
             j += 1
         return segments
-
